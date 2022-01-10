@@ -1,29 +1,24 @@
-const fs = require("fs");
-const http = require("http");
-const url = require("url");
-const replaceTemplate = require('./modules/replaceTemplate')
+const fs = require('fs');
+const http = require('http');
+const url = require('url');
+const slugify = require('slugify');
+const replaceTemplate = require('./modules/replaceTemplate');
 
 /////////////////////////////////////////////////////////////////////////
 // Building Simple API
 /////////////////////////////////////////////////////////////////////////
 
 // Get templates
-const tempOverview = fs.readFileSync(
-  `${__dirname}/templates/template-overview.html`,
-  "utf-8"
-);
-const tempCard = fs.readFileSync(
-  `${__dirname}/templates/template-card.html`,
-  "utf-8"
-);
-const tempProduct = fs.readFileSync(
-  `${__dirname}/templates/template-product.html`,
-  "utf-8"
-);
+const tempOverview = fs.readFileSync(`${__dirname}/templates/template-overview.html`, 'utf-8');
+const tempCard = fs.readFileSync(`${__dirname}/templates/template-card.html`, 'utf-8');
+const tempProduct = fs.readFileSync(`${__dirname}/templates/template-product.html`, 'utf-8');
 
 // Get data and store it in dataObj
-const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, "utf-8");
+const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
 const dataObj = JSON.parse(data);
+
+// Use slugify module
+const slugs = dataObj.map((el) => slugify(el.productName, { lower: true }));
 
 // Create Server
 const server = http.createServer((req, res) => {
@@ -31,43 +26,41 @@ const server = http.createServer((req, res) => {
   const baseURL = `https://${req.headers.host}`;
   const requestURL = new URL(req.url, baseURL);
   const pathname = requestURL.pathname;
-  const query = requestURL.searchParams.get("id");
+  const query = requestURL.searchParams.get('id');
 
   // Overview page
-  if (pathname === "/" || pathname === "/overview") {
-    res.writeHead(200, { "Content-type": "text/html" });
+  if (pathname === '/' || pathname === '/overview') {
+    res.writeHead(200, { 'Content-type': 'text/html' });
 
-    const cardsHtml = dataObj
-      .map((el) => replaceTemplate(tempCard, el))
-      .join("");
-    const output = tempOverview.replace("{%PRODUCT_CARDS%}", cardsHtml);
+    const cardsHtml = dataObj.map((el) => replaceTemplate(tempCard, el)).join('');
+    const output = tempOverview.replace('{%PRODUCT_CARDS%}', cardsHtml);
 
     res.end(output);
 
     // Product page
-  } else if (pathname === "/product") {
-    res.writeHead(200, { "Content-type": "text/html" });
+  } else if (pathname === '/product') {
+    res.writeHead(200, { 'Content-type': 'text/html' });
     const product = dataObj[query];
     output = replaceTemplate(tempProduct, product);
     res.end(output);
 
     // API
-  } else if (pathname === "/api") {
-    res.writeHead(200, { "Content-type": "application/json" });
+  } else if (pathname === '/api') {
+    res.writeHead(200, { 'Content-type': 'application/json' });
     res.end(data);
 
     // Not found
   } else {
     res.writeHead(404, {
-      "Content-type": "text/html",
-      "my-own-header": "hello-world",
+      'Content-type': 'text/html',
+      'my-own-header': 'hello-world',
     });
-    res.end("<h1>This page cannot be found</h1>");
+    res.end('<h1>This page cannot be found</h1>');
   }
 });
 
-server.listen(8000, "127.0.0.1", () => {
-  console.log("Listening to requests on port 8000");
+server.listen(8000, '127.0.0.1', () => {
+  console.log('Listening to requests on port 8000');
 });
 
 // Creating Simple Web Server
